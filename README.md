@@ -46,7 +46,7 @@ You may use `make install` within this directory to create the `/etc/dgc/` direc
 Other than that, the needed SQLite tables are created if they don't exist when the Python program is started. However, if need to be, here is the current table structure.
 
 ```SQL
-CREATE TABLE IF NOT EXISTS `channels` (id integer PRIMARY KEY AUTOINCREMENT, guildid integer, channelid integer)
+CREATE TABLE IF NOT EXISTS `channels` (guildid integer PRIMARY KEY, channelid integer, webhookurl text)
 ```
 
 ## Starting
