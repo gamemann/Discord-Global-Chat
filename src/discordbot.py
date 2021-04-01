@@ -24,7 +24,7 @@ def connect(cfg, conn):
         await update_channels()
 
     @bot.command()
-    @has_permissions(administrator=True)  
+    @commands.has_permissions(administrator=True)  
     async def dgc_linkchannel(ctx, id=None):
         chnlid = 0
         chnl = 0
@@ -35,7 +35,7 @@ def connect(cfg, conn):
             chnlid = ctx.channel.id
 
         try:
-            chnl await bot.fetch_channel(chnlid)
+            chnl = await bot.fetch_channel(chnlid)
         except NotFound:
             await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild.", delete_after=cfg['BotMsgStayTime'])
             return
@@ -49,7 +49,7 @@ def connect(cfg, conn):
         await ctx.channel.send("Successfully linked channel!", delete_after=cfg['BotMsgStayTime'])
 
     @bot.command()
-    @has_permissions(administrator=True) 
+    @commands.has_permissions(administrator=True) 
     async def dcr_unlinkchannel(ctx, name=None):
         chnlid = 0
         chnl = 0
@@ -93,7 +93,7 @@ def connect(cfg, conn):
 
                 # Try to fetch the channel by ID.
                 try:
-                    await chnlobj = bot.fetch_channel(chnl)
+                    chnlobj = await bot.fetch_channel(chnl)
                 except NotFound:
                     print("Channel #" + chnl + " under guild #" + guild + " not found. Removing from list.\n")
                     channels[guild].remove(chnl)
