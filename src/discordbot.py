@@ -1,15 +1,19 @@
 import os
 import base64
 import time
+import aiohttp
+import aiohttp
 
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions, MissingPermissions
+from discord import Webhook, AsyncWebhookAdapter
 
 import db
 
 bot = commands.Bot(command_prefix='!')
 channels = {}
+webhooks = {}
 
 def connect(cfg, conn):
     # Enable intents.
@@ -18,11 +22,12 @@ def connect(cfg, conn):
     
     # Get connection cursor.
     cur = conn.cursor()
+    
 
     @bot.event
     async def on_ready():
         print("Successfully connected to Discord.")
-        await update_channels()
+        await updateinfo()
 
     @bot.command(name="dgc_linkchannel")
     @has_permissions(administrator=True)  
@@ -41,17 +46,25 @@ def connect(cfg, conn):
             await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild.", delete_after=cfg['BotMsgStayTime'])
             return
 
+        newchannels = [chnlid]
         cur = conn.cursor()
-        cur.execute("INSERT OR REPLACE INTO `channels` (`guildid`, `channelid`) VALUES (?, ?)", (ctx.guild.id, chnlid))
+
+        # Retrieve current channel list if any.
+        cur.execute("SELECT `channelid` FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
         conn.commit()
 
-        await update_channels()
+        exist = cur.fetchone()
+
+        if exist is not None and len(exist) > 0:
+            cur.execute("UPDATE `channels` SET `channelid`=? WHERE `guildid`=?", (chnlid, ctx.guild.id))
+            conn.commit()
+        else:
+            cur.execute("INSERT INTO `channels` (`guildid`, `channelid`, `webhookurl`) VALUES (?, ?, '')", (ctx.guild.id, chnlid))
+            conn.commit()
+
+        await updateinfo()
 
         await ctx.channel.send("Successfully linked channel!", delete_after=cfg['BotMsgStayTime'])
-
-    @dgc_linkchannel.error
-    async def dgc_linkchannel_error(ctx, error):
-        await ctx.send("Error with cmd => " + error, delete_after=cfg['BotMsgStayTime'])
 
     @bot.command(name="dgc_unlinkchannel")
     @has_permissions(administrator=True) 
@@ -67,34 +80,60 @@ def connect(cfg, conn):
         try:
             chnl = await bot.fetch_channel(chnlid)
         except NotFound:
-            await ctx.channel.send("**Warning** - Could not find channel with ID **" + chnlid + "** in current Discord guild. However, will attempt to delete anyways.", delete_after=cfg['BotMsgStayTime'])
+            await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild. However, deleting from database anyways.", delete_after=cfg['BotMsgStayTime'])
 
         cur = conn.cursor()
-        cur.execute("DELETE FROM `channels` WHERE `guildid`=? AND `channelid`=?", (ctx.guild.id, chnlid))
+
+        # Retrieve current channel list if any.
+        cur.execute("SELECT `channelid` FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
         conn.commit()
 
-        await update_channels()
+        exist = cur.fetchone()
+
+        if exist is None or len(exist) < 1:
+            await ctx.channel.send("No results came back for specific guild. Channel must not exist.", delete_after=cfg['BotMsgStayTime'])
+            return
+
+        cur.execute("UPDATE `channels` SET `channelid`=0 WHERE `guildid`=?", [ctx.guild.id])
+        conn.commit()
+
+        await updateinfo()
 
         await ctx.channel.send("Successfully unlinked channel!", delete_after=cfg['BotMsgStayTime'])
 
+    @bot.command(name="dgc_updatehook")
+    async def dgc_updatehook(ctx, url=None):
+        if url is None:
+            ctx.channel.send("**Error** - You're missing the URL argument.", delete_after=cfg['BotMsgStayTime'])
+            return
+        
+        cur = conn.cursor()
+        cur.execute("UPDATE `channels` SET `webhookurl`=? WHERE `guildid`=?", (url, ctx.guild.id))
+
+        await updateinfo()
+        await ctx.channel.send("Successfully updated Web Hook URL if row existed.", delete_after=cfg['BotMsgStayTime'])
+
     @bot.event
     async def on_message(msg):
-        # Make sure the user isn't the bot.
-        if msg.author.id == bot.user.id:
+        # Make sure the user isn't the bot or a bot.
+        if msg.author.id == bot.user.id or msg.author.bot is True:
+            return
+
+        # If this is a webhook, ignore.
+        if msg.webhook_id != None:
             return
 
         chnlid = msg.channel.id
 
         # Check to see if this is a global channel.
-        if channels is None or msg.guild.id not in channels or chnlid not in channels[msg.guild.id]:
+        if channels is None or msg.guild.id not in channels or msg.channel.id != channels[msg.guild.id]:
             await bot.process_commands(msg)
             return
 
         # Loop through all cached channels.
-        for guild, channellist in channels.items():
-            for chnl in channellist:
+        for guild, chnl in channels.items():
                 # Ignore if this is the current channel.
-                if msg.guild.id == guild and chnl == chnlid:
+                if chnl is None or (msg.guild.id == guild and chnl == chnlid):
                     continue
 
                 # Try to fetch the channel by ID.
@@ -105,27 +144,54 @@ def connect(cfg, conn):
                     channels[guild].remove(chnl)
                     continue
 
+                # Get guild name.
+                guildname = False
+
+                try:
+                    guildobj = await bot.fetch_guild(msg.guild.id)
+                    guildname = guildobj.name
+                except (Forbidden, HTTPException) as e:
+                    guildname = False
+
+                msgtosend = msg.content
+
+                ## Append guild name to message.
+                if guildname != False:
+                    msgtosend = msgtosend + "\n\n*From " + guildname + "*"
+
                 # Now send to the Discord channel.
-                await chnlobj.send(content=msg.content)
+                async with aiohttp.ClientSession() as session:
+                    webhook = Webhook.from_url(webhooks[guild], adapter=AsyncWebhookAdapter(session))
+                    await webhook.send(msgtosend, username=msg.author.display_name, avatar_url=msg.author.avatar_url)
 
         await bot.process_commands(msg)
 
-    @tasks.loop(minutes=cfg['UpdateTime'])
-    async def update_channels():
-        print("Updating channels...")
+    @tasks.loop(seconds=cfg['UpdateTime'])
+    async def updateinfo():
+        print("Updating channels and web hook URLs...")
         cur = conn.cursor()
 
         for guild in bot.guilds:
             # Perform SQL query to retrieve all channels for this specific guild.
-            cur.execute("SELECT `channelid` FROM `channels` WHERE `guildid`=?", [guild.id])
+            cur.execute("SELECT `channelid`, `webhookurl` FROM `channels` WHERE `guildid`=?", [guild.id])
             conn.commit()
 
-            # Reset channels list.
-            channels[guild.id] = []
+            # Reset channels list and web hook URL.
+            channels[guild.id] = None
+            webhooks[guild.id] = None
 
-            rows = cur.fetchall()
+            row = cur.fetchone()
 
-            for row in rows:
-                channels[guild.id].append(row['channelid'])
+            if row is None or len(row) < 1:
+                #print("Couldn't fetch guild #" + str(guild.id))
+                continue
+
+            # Assign web hook.
+            webhooks[guild.id] = row['webhookurl']
+
+            # Assign channel ID.
+            channels[guild.id] = row['channelid']
+
+            #print("Updated #" + str(guild.id) + " to:\n\nWeb hook => " + str(webhooks[guild.id]) + "\nChannel ID => " + str(channels[guild.id]) + "\n\n")
             
     bot.run(cfg['BotToken'])
