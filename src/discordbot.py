@@ -110,7 +110,7 @@ def connect(cfg, conn):
         for guild in bot.guilds:
             # Perform SQL query to retrieve all channels for this specific guild.
             cur.execute("SELECT `channelid` FROM `channels` WHERE `guildid`=?", [guild.id])
-            cur.commit()
+            conn.commit()
 
             # Reset channels list.
             channels[guild.id] = []
