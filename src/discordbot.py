@@ -106,7 +106,7 @@ def connect(cfg, conn):
                     continue
 
                 # Now send to the Discord channel.
-                await chnlobj.send(content=msg)
+                await chnlobj.send(content=msg.content)
 
         await bot.process_commands(msg)
 
