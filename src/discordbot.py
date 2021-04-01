@@ -76,7 +76,7 @@ def connect(cfg, conn):
         if pl.user_id == bot.user.id:
             return
 
-    @tasks.loop(minutes=5.0)
+    @tasks.loop(minutes=cfg['UpdateTime'])
     async def update_channels():
         print("Updating channels...")
         cur = conn.cursor()
