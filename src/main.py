@@ -8,7 +8,7 @@ import setup
 def main():
     # Set default values for CFG file and SQLite databse locations.
     cfgfile = "/etc/dgc/settings.json"
-    sqlitedb = "/etc/dgc/dcr.db"
+    sqlitedb = "/etc/dgc/dgc.db"
 
     # Loop through all arguments.
     for arg in sys.argv:
