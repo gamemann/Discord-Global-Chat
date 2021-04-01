@@ -4,6 +4,7 @@ import time
 
 import discord
 from discord.ext import commands, tasks
+from discord.ext.commands import has_permissions, MissingPermissions
 
 import db
 
@@ -23,8 +24,8 @@ def connect(cfg, conn):
         print("Successfully connected to Discord.")
         await update_channels()
 
-    @bot.command()
-    @commands.has_permissions(administrator=True)  
+    @bot.command(name="dgc_linkchannel")
+    @has_permissions(administrator=True)  
     async def dgc_linkchannel(ctx, id=None):
         chnlid = 0
         chnl = 0
@@ -42,15 +43,19 @@ def connect(cfg, conn):
 
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO `channels` (`guildid`, `channelid`) VALUES (?, ?)", (ctx.guild.id, chnlid))
-        cur.commit()
+        conn.commit()
 
         await update_channels()
 
         await ctx.channel.send("Successfully linked channel!", delete_after=cfg['BotMsgStayTime'])
 
-    @bot.command()
-    @commands.has_permissions(administrator=True) 
-    async def dcr_unlinkchannel(ctx, name=None):
+    @dgc_linkchannel.error
+    async def dgc_linkchannel_error(ctx, error):
+        await ctx.send("Error with cmd => " + error, delete_after=cfg['BotMsgStayTime'])
+
+    @bot.command(name="dgc_unlinkchannel")
+    @has_permissions(administrator=True) 
+    async def dgc_unlinkchannel(ctx, name=None):
         chnlid = 0
         chnl = 0
 
@@ -66,7 +71,7 @@ def connect(cfg, conn):
 
         cur = conn.cursor()
         cur.execute("DELETE FROM `channels` WHERE `guildid`=? AND `channelid`=?", (ctx.guild.id, chnlid))
-        cur.commit()
+        conn.commit()
 
         await update_channels()
 
@@ -75,13 +80,14 @@ def connect(cfg, conn):
     @bot.event
     async def on_message(msg):
         # Make sure the user isn't the bot.
-        if pl.user_id == bot.user.id:
+        if msg.author.id == bot.user.id:
             return
 
         chnlid = msg.channel.id
 
         # Check to see if this is a global channel.
-        if channels is None or chnlid not in channels[msg.guild.id]:
+        if channels is None or msg.guild.id not in channels or chnlid not in channels[msg.guild.id]:
+            await bot.process_commands(msg)
             return
 
         # Loop through all cached channels.
@@ -101,6 +107,8 @@ def connect(cfg, conn):
 
                 # Now send to the Discord channel.
                 await chnlobj.send(content=msg)
+
+        await bot.process_commands(msg)
 
     @tasks.loop(minutes=cfg['UpdateTime'])
     async def update_channels():
