@@ -5,7 +5,7 @@ import sqlite3
 def setuptables(conn):
     cur = conn.cursor()
 
-    cur.execute("CREATE TABLE IF NOT EXISTS `channels` (guildid integer PRIMARY KEY, channels string, webhookurl string)")
+    cur.execute("CREATE TABLE IF NOT EXISTS `channels` (guildid integer PRIMARY KEY, channels text, webhookurl text)")
     conn.commit()
 
     print("[SETUP] Created all tables.")
