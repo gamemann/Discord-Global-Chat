@@ -21,6 +21,7 @@ def connect(cfg, conn):
     @bot.event
     async def on_ready():
         print("Successfully connected to Discord.")
+        await update_channels()
 
     @bot.command()
     @has_permissions(administrator=True)  
@@ -59,7 +60,7 @@ def connect(cfg, conn):
             chnlid = ctx.channel.id
 
         try:
-            chnl await bot.fetch_channel(chnlid)
+            chnl = await bot.fetch_channel(chnlid)
         except NotFound:
             await ctx.channel.send("**Warning** - Could not find channel with ID **" + chnlid + "** in current Discord guild. However, will attempt to delete anyways.", delete_after=cfg['BotMsgStayTime'])
 
@@ -73,8 +74,33 @@ def connect(cfg, conn):
 
     @bot.event
     async def on_message(msg):
+        # Make sure the user isn't the bot.
         if pl.user_id == bot.user.id:
             return
+
+        chnlid = msg.channel.id
+
+        # Check to see if this is a global channel.
+        if channels is None or chnlid not in channels[msg.guild.id]:
+            return
+
+        # Loop through all cached channels.
+        for guild, channellist in channels.items():
+            for chnl in channellist:
+                # Ignore if this is the current channel.
+                if msg.guild.id == guild and chnl == chnlid:
+                    continue
+
+                # Try to fetch the channel by ID.
+                try:
+                    await chnlobj = bot.fetch_channel(chnl)
+                except NotFound:
+                    print("Channel #" + chnl + " under guild #" + guild + " not found. Removing from list.\n")
+                    channels[guild].remove(chnl)
+                    continue
+
+                # Now send to the Discord channel.
+                await chnlobj.send(content=msg)
 
     @tasks.loop(minutes=cfg['UpdateTime'])
     async def update_channels():
