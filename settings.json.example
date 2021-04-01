@@ -1,5 +1,6 @@
 {
     "BotToken": "<BOT TOKEN>",
     "BotMsgStayTime": 10.0,
-    "UpdateTime": 5.0
+    "UpdateTime": 5.0,
+    "AppendGuildName": true
 }

@@ -156,7 +156,7 @@ def connect(cfg, conn):
                 msgtosend = msg.content
 
                 ## Append guild name to message.
-                if guildname != False:
+                if guildname != False and cfg['AppendGuildName']:
                     msgtosend = msgtosend + "\n\n*From " + guildname + "*"
 
                 # Now send to the Discord channel.
