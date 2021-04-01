@@ -36,7 +36,7 @@ def connect(cfg, conn):
         try:
             chnl await bot.fetch_channel(chnlid)
         except NotFound:
-            await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild.", delete_after=cfg["BotMsgStayTime"])
+            await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild.", delete_after=cfg['BotMsgStayTime'])
             return
 
         cur = conn.cursor()
@@ -45,7 +45,7 @@ def connect(cfg, conn):
 
         await update_channels()
 
-        await ctx.channel.send("Successfully linked channel!", delete_after=cfg["BotMsgStayTime"])
+        await ctx.channel.send("Successfully linked channel!", delete_after=cfg['BotMsgStayTime'])
 
     @bot.command()
     @has_permissions(administrator=True) 
@@ -61,7 +61,7 @@ def connect(cfg, conn):
         try:
             chnl await bot.fetch_channel(chnlid)
         except NotFound:
-            await ctx.channel.send("**Warning** - Could not find channel with ID **" + chnlid + "** in current Discord guild. However, will attempt to delete anyways.", delete_after=cfg["BotMsgStayTime"])
+            await ctx.channel.send("**Warning** - Could not find channel with ID **" + chnlid + "** in current Discord guild. However, will attempt to delete anyways.", delete_after=cfg['BotMsgStayTime'])
 
         cur = conn.cursor()
         cur.execute("DELETE FROM `channels` WHERE `guildid`=? AND `channelid`=?", (ctx.guild.id, chnlid))
@@ -69,7 +69,7 @@ def connect(cfg, conn):
 
         await update_channels()
 
-        await ctx.channel.send("Successfully unlinked channel!", delete_after=cfg["BotMsgStayTime"])
+        await ctx.channel.send("Successfully unlinked channel!", delete_after=cfg['BotMsgStayTime'])
 
     @bot.event
     async def on_message(msg):
