@@ -23,7 +23,7 @@ The config file is in JSON format and the following keys are supported.
 
 * **BotToken** - The Discord bot token. Please retrieve this from the Discord Developers page for your bot.
 * **BotMsgStayTime** - When the bot replies to a command in a text channel, delete the bot message this many seconds after (default - **10.0** seconds).
-* **UpdateTime** - How often to update the channel and web hook URL cache in minutes (default - **5.0** minutes).
+* **UpdateTime** - How often to update the channel and web hook URL cache in seconds (default - **60.0** seconds).
 
 ## Bot Commands
 The command prefix is `!`. You must execute these commands inside of a text channel of the guild you want to modify. You must also be an administrator in order to use these commands.
