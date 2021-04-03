@@ -162,7 +162,7 @@ def connect(cfg, conn):
                 # Now send to the Discord channel.
                 async with aiohttp.ClientSession() as session:
                     webhook = Webhook.from_url(webhooks[guild], adapter=AsyncWebhookAdapter(session))
-                    await webhook.send(msgtosend, username=msg.author.display_name, avatar_url=msg.author.avatar_url)
+                    await webhook.send(msgtosend, username=msg.author.display_name, avatar_url=msg.author.avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False))
 
         await bot.process_commands(msg)
 
