@@ -116,7 +116,7 @@ def connect(cfg, conn):
     @bot.event
     async def on_message(msg):
         # Make sure the user isn't the bot or a bot.
-        if msg.author.id == bot.user.id or msg.author.bot is True:
+        if msg.author.id == bot.user.id or msg.author.bot == True:
             return
 
         # If this is a webhook, ignore.
