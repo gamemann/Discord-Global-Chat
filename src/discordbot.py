@@ -162,7 +162,14 @@ def connect(cfg, conn):
                 # Now send to the Discord channel.
                 async with aiohttp.ClientSession() as session:
                     webhook = Webhook.from_url(webhooks[guild], adapter=AsyncWebhookAdapter(session))
-                    await webhook.send(msgtosend, username=msg.author.display_name, avatar_url=msg.author.avatar_url, allowed_mentions=discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False))
+
+                    # Check for mentions.
+                    mentions = discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False)
+
+                    if cfg['AllowMentions']:
+                        mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
+
+                    await webhook.send(msgtosend, username=msg.author.display_name, avatar_url=msg.author.avatar_url, allowed_mentions=mentions)
 
         await bot.process_commands(msg)
 
