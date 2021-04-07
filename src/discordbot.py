@@ -140,9 +140,7 @@ def connect(cfg, conn):
         if row is None or len(row) < 1:
             await ctx.channel.send("Could not retrieve hook.", delete_after=cfg['BotMsgStayTime'])
 
-        data = row
-
-        await ctx.channel.send("Web hook URL => " + str(data['webhookurl']))
+        await ctx.channel.send("Web hook URL => " + str(row['webhookurl']))
 
     @bot.event
     async def on_message(msg):
