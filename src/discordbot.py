@@ -108,7 +108,9 @@ def connect(cfg, conn):
             return
         
         cur = conn.cursor()
+        
         cur.execute("UPDATE `channels` SET `webhookurl`=? WHERE `guildid`=?", (url, ctx.guild.id))
+        conn.commit()
 
         await updateinfo()
         await ctx.channel.send("Successfully updated Web Hook URL if row existed.", delete_after=cfg['BotMsgStayTime'])
