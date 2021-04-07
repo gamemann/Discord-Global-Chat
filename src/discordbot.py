@@ -102,13 +102,14 @@ def connect(cfg, conn):
         await ctx.channel.send("Successfully unlinked channel!", delete_after=cfg['BotMsgStayTime'])
 
     @bot.command(name="dgc_updatehook")
+    @has_permissions(administrator=True) 
     async def dgc_updatehook(ctx, url=None):
         if url is None:
             ctx.channel.send("**Error** - You're missing the URL argument.", delete_after=cfg['BotMsgStayTime'])
             return
         
         cur = conn.cursor()
-        
+
         cur.execute("UPDATE `channels` SET `webhookurl`=? WHERE `guildid`=?", (url, ctx.guild.id))
         conn.commit()
 
