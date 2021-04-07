@@ -117,7 +117,7 @@ def connect(cfg, conn):
 
         if row is None or len(row) < 1:
             # Insert.
-            cur.execute("INSERT INTO `channels` (`guildid`, `channelid`, `webhookurl`) VALUES (?, 0, ?)", (ctx.guild.id, row['webhookurl']))
+            cur.execute("INSERT INTO `channels` (`guildid`, `channelid`, `webhookurl`) VALUES (?, 0, ?)", (ctx.guild.id, url))
             conn.commit()
         else:
             # Update.
