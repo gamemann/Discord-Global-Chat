@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions, MissingPermissions
 from discord import Webhook, AsyncWebhookAdapter
+from discord.errors import NotFound
 
 import db
 
