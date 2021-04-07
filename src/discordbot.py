@@ -121,7 +121,7 @@ def connect(cfg, conn):
     async def dgc_gethook(ctx):
         cur = conn.cursor()
 
-        cur.execute("SELECT * FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
+        cur.execute("SELECT `webhookurl` FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
         conn.commit()
 
         row = cur.fetchone()
