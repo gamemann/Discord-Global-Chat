@@ -23,7 +23,6 @@ def connect(cfg, conn):
     # Get connection cursor.
     cur = conn.cursor()
     
-
     @bot.event
     async def on_ready():
         print("Successfully connected to Discord.")
@@ -110,8 +109,19 @@ def connect(cfg, conn):
         
         cur = conn.cursor()
 
-        cur.execute("UPDATE `channels` SET `webhookurl`=? WHERE `guildid`=?", (url, ctx.guild.id))
+        cur.execute("SELECT `webhookurl` FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
         conn.commit()
+
+        row = cur.fetchone()
+
+        if row is None or len(row) < 1:
+            # Insert.
+            cur.execute("INSERT INTO `channels` (`guildid`, `channelid`, `webhookurl`) VALUES (?, 0, ?)", (ctx.guild.id, row['webhookurl']))
+            conn.commit()
+        else:
+            # Update.
+            cur.execute("UPDATE `channels` SET `webhookurl`=? WHERE `guildid`=?", (url, ctx.guild.id))
+            conn.commit()
 
         await updateinfo()
         await ctx.channel.send("Successfully updated Web Hook URL if row existed.", delete_after=cfg['BotMsgStayTime'])
