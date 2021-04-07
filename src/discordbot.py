@@ -116,6 +116,23 @@ def connect(cfg, conn):
         await updateinfo()
         await ctx.channel.send("Successfully updated Web Hook URL if row existed.", delete_after=cfg['BotMsgStayTime'])
 
+    @bot.command(name="dgc_gethook")
+    @has_permissions(administrator=True) 
+    async def dgc_gethook(ctx):
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM `channels` WHERE `guildid`=?", [ctx.guild.id])
+        conn.commit()
+
+        row = cur.fetchone()
+
+        if row is None or len(row) < 1:
+            await ctx.channel.send("Could not retrieve hook.", delete_after=cfg['BotMsgStayTime'])
+
+        data = row
+
+        await ctx.channel.send("Web hook URL => " + str(data['webhookurl']))
+
     @bot.event
     async def on_message(msg):
         # Make sure the user isn't the bot or a bot.
