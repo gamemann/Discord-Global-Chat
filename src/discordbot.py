@@ -44,6 +44,7 @@ def connect(cfg, conn):
             chnl = await bot.fetch_channel(chnlid)
         except NotFound:
             await ctx.channel.send("**Error** - Could not find channel with ID **" + chnlid + "** in current Discord guild.", delete_after=cfg['BotMsgStayTime'])
+
             return
 
         newchannels = [chnlid]
@@ -92,6 +93,7 @@ def connect(cfg, conn):
 
         if exist is None or len(exist) < 1:
             await ctx.channel.send("No results came back for specific guild. Channel must not exist.", delete_after=cfg['BotMsgStayTime'])
+
             return
 
         cur.execute("UPDATE `channels` SET `channelid`=0 WHERE `guildid`=?", [ctx.guild.id])
@@ -157,6 +159,7 @@ def connect(cfg, conn):
         # Check to see if this is a global channel.
         if channels is None or msg.guild.id not in channels or msg.channel.id != channels[msg.guild.id]:
             await bot.process_commands(msg)
+
             return
 
         # Loop through all cached channels.
@@ -169,8 +172,8 @@ def connect(cfg, conn):
                 try:
                     chnlobj = await bot.fetch_channel(chnl)
                 except NotFound:
-                    print("Channel #" + chnl + " under guild #" + guild + " not found. Removing from list.\n")
                     channels[guild].remove(chnl)
+
                     continue
 
                 # Get guild name.
