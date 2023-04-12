@@ -7,20 +7,17 @@ import aiohttp
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import has_permissions, MissingPermissions
-from discord import Webhook, AsyncWebhookAdapter
+from discord import Webhook
+from discord import Intents
 from discord.errors import NotFound
 
 import db
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', intents=Intents.all())
 channels = {}
 webhooks = {}
 
 def connect(cfg, conn):
-    # Enable intents.
-    intents = discord.Intents.default()
-    intents.members = True 
-    
     # Get connection cursor.
     cur = conn.cursor()
     
@@ -193,7 +190,7 @@ def connect(cfg, conn):
 
                 # Now send to the Discord channel.
                 async with aiohttp.ClientSession() as session:
-                    webhook = Webhook.from_url(webhooks[guild], adapter=AsyncWebhookAdapter(session))
+                    webhook = Webhook.from_url(webhooks[guild], session=session)
 
                     # Check for mentions.
                     mentions = discord.AllowedMentions(everyone=False, users=False, roles=False, replied_user=False)
