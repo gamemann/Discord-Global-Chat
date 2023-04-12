@@ -10,7 +10,7 @@ python3 -m pip install -U discord.py
 ```
 
 ### Enable Intents
-You must enable intents within the Discord Developers portal under your project's "Bot" tab. You should only need "Message Content Intent", but I've enabled all three just in-case.
+You must enable intents within the Discord Developers portal under your project's "Bot" tab. You should only need "Server Members Intent", but I've enabled all three just in-case.
 
 ![Intents Image](./images/intents.png)
 
